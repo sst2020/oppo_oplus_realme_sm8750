@@ -90,6 +90,11 @@ on:
         required: true
         type: boolean
         default: 'false'
+      cve_2026_43499_patch:
+        description: '是否应用 CVE-2026-43499 rtmutex 修复补丁'
+        required: true
+        type: boolean
+        default: 'true'
       ccache_debug:
         description: '是否上传 Ccache调试日志(用于调试, 无需要不必开启)'
         required: true
@@ -248,6 +253,15 @@ jobs:
           if [ "${{ steps.ccache-restore.outputs.cache-hit }}" == 'true' ]; then
             echo "ccache缓存命中详情:"
             ccache -sv
+          fi
+      - name: 应用 CVE_2026_43499 修复补丁
+        id: cve_2026_43499_patch
+        run: |
+          if [[ "${{ github.event.inputs.cve_2026_43499_patch }}" == "true" ]]; then
+            echo ">>> 应用 CVE-2026-43499 rtmutex 修复补丁..."
+            cd kernel_workspace/common
+            wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/security_patch/cve-2026-43499-rtmutex-6.6.patch
+            patch -p1 -F 3 < cve-2026-43499-rtmutex-6.6.patch
           fi
 
       - name: 添加KernelSU
@@ -750,6 +764,7 @@ jobs:
           echo "ADIOS: ${{ github.event.inputs.adios_enable }}" >> ./ak3.log
           echo "Re-Kernel: ${{ github.event.inputs.rekernel_enable }}" >> ./ak3.log
           echo "BBG: ${{ github.event.inputs.baseband_guard }}" >> ./ak3.log
+          echo "CVE-2026-43499: ${{ github.event.inputs.cve_2026_43499_patch }}" >> ./ak3.log
           zip -z ../$AK3_NAME < ./ak3.log
 
       - name: 上传 Ccache 调试日志
@@ -835,6 +850,7 @@ jobs:
           - Re-Kernel支持：${{ github.event.inputs.rekernel_enable }}
           - 内核级基带保护支持：${{ github.event.inputs.baseband_guard }}
           - ReSukiSU管理器下载：[ReSukiSU_CI](https://github.com/cctv18/ReSukiSU_CI/releases)
+          - CVE-2026-43499 rtmutex 修复补丁：${{ github.event.inputs.cve_2026_43499_patch }}
           - SukiSU Ultra管理器下载：[SukiSU-Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
           - KernelSU Next管理器下载：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
           - KSU原版管理器下载：[KernelSU](https://github.com/tiann/KernelSU/releases)
